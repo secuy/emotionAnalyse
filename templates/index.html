@@ -1,0 +1,758 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="../static/css/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <title>微博文本情感分类与分析</title>
+    <script crossorigin="anonymous" integrity="sha512-weWXHm0Ws2cZKjjwugRMnnOAx9uCP/wUVf84W7/fXQimwYUK28zPDGPprDozomQLpKv6U99xN9PI9+yLI9qxNw==" src="https://lib.baomitu.com/echarts/5.3.2-rc.1/echarts.min.js"></script>
+    <style type="text/css">
+    .a_style{
+    display:inline-block;
+    text-decoration: none;
+    color:white;
+    width:255px;
+    height:40px;
+    line-height: 40px; /* 设置垂直居中 */
+    background:#0099FF;
+    border-radius:3px;
+    margin-top:20px;
+    text-align:center;
+    vertical-align: middle;}
+    .a_style:hover {  color : white ; }
+
+    .like{ font-size:15px;  color:#ccc; cursor:pointer;}
+    .cs{color:#f00;
+ </style>
+</head>
+
+<body>
+    <nav class="navbar shadow sticky-top navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">微博文本智能情感分类与数据多维分析</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+    <div class="container pt-3">
+        <div class="row">
+            <div class="col-3">
+                <!-- demo_form.php -->
+                <form action="/search" method="get">
+                    请输入搜索关键字: <input type="search" name="search1"/>
+                    <input type="submit"  value="搜索" />
+		        </form>
+                <div class="list-group shadow" id="list-tab" role="tablist">
+                    <a class="a_style", href="/refresh/0", id="btn1">{{TitleAll[0]}}</a>
+                    <a class="a_style", href="/refresh/1", id="btn2">{{TitleAll[1]}}</a>
+                    <a class="a_style", href="/refresh/2", id="btn3">{{TitleAll[2]}}</a>
+                    <a class="a_style", href="/refresh/3", id="btn4">{{TitleAll[3]}}</a>
+                    <a class="a_style", href="/refresh/4", id="btn5">{{TitleAll[4]}}</a>
+                    <a class="a_style", href="/refresh/5", id="btn6">{{TitleAll[5]}}</a>
+                    <a class="a_style", href="/refresh/6", id="btn7">{{TitleAll[6]}}</a>
+                    <a class="a_style", href="/refresh/7", id="btn8">{{TitleAll[7]}}</a>
+                    <a class="a_style", href="/refresh/8", id="btn9">{{TitleAll[8]}}</a>
+                    <!-- <a class="a_style", href="/refresh/3", id="btn3">{{TitleAll[2]}}</a> -->
+                </div>
+            </div>
+            <div class="col-9 pl-0">
+                <div class="tab-content" id="nav-tabContent">
+                    <div th:each="hot,iterStat: ${hotList}" th:id="'hot' + ${iterStat.index}" th:class="'tab-pane fade' + (${iterStat.index}==0?' show active':'')" role="tabpanel" aria-labelledby="list-profile-list">
+                        <div th:each="weibo: ${hot.weiboList}">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card shadow">
+                                        <div class="card-body">
+                                            <h6 class="card-title",id="NewsTitle">{{news.title}}
+                                            </h6>
+                                            <p class="card-subtitle mb-2 text-muted", id="NewsTime">{{news.time}}</p>
+                                            <!-- 添加热度标签 -->
+                                            {% if news.hotIndex=="1" %}
+                                                <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★</p>
+                                            {% elif news.hotIndex=="2" %}
+                                                <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★</p>
+                                            {% elif news.hotIndex=="3" %}
+                                                <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★</p>
+                                            {% elif news.hotIndex=="4" %}
+                                                <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★★</p>
+                                            {% else %}
+                                                <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★★★</p>
+                                            {% endif %}
+
+                                            <p class="card-text", id="NewsContent">{{news.content}}</p>
+                                            <a href="{{news.url}}" target="_Blank" class="card-link">点击链接，打开微博：{{news.url}}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row justify-content-md-center pt-3 pb-3">
+                                <div class="col-12">
+                                    <div class="card shadow" style="width: 840px; display: inline-block;padding-top: 20px;">
+                                         <!-- 为 ECharts 准备一个定义了宽高的 DOM -->
+                                        <div id="main" style="width: 410px;height:300px; display: inline-block;" ></div>
+                                        <div id="main2" style="width: 410px;height:300px; display: inline-block;"></div>
+                                    </div>
+                                    <div class="card shadow" style="width: 840px; display: inline-block;padding-top: 20px;">
+                                         <!-- 为 ECharts 准备一个定义了宽高的 DOM -->
+                                        <div id="main3" style="width: 410px;height:300px; display: inline-block;" ></div>
+                                        <div id="main4" style="width: 410px;height:300px; display: inline-block;"></div>
+                                    </div>
+                                    <div class="card shadow" style="width: 840px; display: inline-block;padding-top: 20px;">
+                                         <!-- 为 ECharts 准备一个定义了宽高的 DOM -->
+                                        <div id="main5" style="width: 410px;height:300px; display: inline-block;" ></div>
+                                        <div id="main6" style="width: 410px;height:300px; display: inline-block;"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <ul class="list-group shadow list-group-flush">
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span th:text="${comment.text}"><strong>精选评论</strong></span>
+                                            <div class="flex-row float-right">
+                                                <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[0]}}</span>
+                                            <div class="flex-row float-right" >
+                                                {% if news.comment_emotion[0]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[0]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[0]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[0]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[0]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[0]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[0]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[0]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[1]}}</span>
+                                            <div class="flex-row float-right">
+                                                {% if news.comment_emotion[1]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[1]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[1]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[1]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[1]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[1]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[1]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[1]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[2]}}</span>
+                                            <div class="flex-row float-right">
+                                                {% if news.comment_emotion[2]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[2]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[2]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[2]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[2]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[2]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[2]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[2]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[3]}}</span>
+                                            <div class="flex-row float-right">
+                                                {% if news.comment_emotion[3]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[3]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[3]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[3]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[3]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[3]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[3]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[3]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[4]}}</span>
+                                            <div class="flex-row float-right">
+                                               {% if news.comment_emotion[4]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[4]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[4]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[4]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[4]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[4]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[4]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[4]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[5]}}</span>
+                                            <div class="flex-row float-right">
+                                               {% if news.comment_emotion[5]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[5]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[5]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[5]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[5]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[5]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[5]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[5]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[6]}}</span>
+                                            <div class="flex-row float-right">
+                                                {% if news.comment_emotion[6]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[6]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[6]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[6]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[6]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[6]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[6]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[6]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[7]}}</span>
+                                            <div class="flex-row float-right">
+                                               {% if news.comment_emotion[7]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[7]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[7]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[7]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[7]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[7]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[7]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[7]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="list-group-item" th:each="comment: ${weibo.comments}">
+                                            <span >{{news.comment[8]}}</span>
+                                            <div class="flex-row float-right">
+                                               {% if news.comment_emotion[8]== "喜悦" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[8]}}</p>
+                                                    <span class="badge badge-pill badge-danger" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 喜悦 </span>
+                                                {% elif news.comment_emotion[8]== "低落" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[8]}}</p>
+                                                    <span class="badge badge-pill badge-primary" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 低落 </span>
+                                                {% elif news.comment_emotion[8]== "愤怒" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[8]}}</p>
+                                                    <span class="badge badge-pill badge-success" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 愤怒 </span>
+                                                {% elif news.comment_emotion[8]== "厌恶" %}
+                                                    <p class="like" style="display: inline-block;">&#10084;</p>
+                                                    <p style="display: inline-block;margin-right:10px">{{news.count_like[8]}}</p>
+                                                    <span class="badge badge-pill badge-warning" data-toggle="modal" data-target="#modal" th:attr="data-text=${comment.text}" th:if="${comment.score < 0}"> 厌恶 </span>
+                                                {% endif %}
+                                            </div>
+                                    </ul>
+                                    <a th:href="@{/detail(key=${weibo.key})}" class="card-link float-right p-3"></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <strong class="modal-title">反馈</strong>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="feedback-form">
+                        <div class="form-group">
+                            <label id="comment-label" class="col-form-label"></label>
+                            <input id="comment-input" class="form-control" type="hidden" name="comment">
+                        </div>
+                        <div class="custom-control custom-radio custom-control-inline">
+                            <input type="radio" id="radio1" class="custom-control-input" name="sentiment" value="pos">
+                            <label class="custom-control-label" for="radio1">😃</label>
+                        </div>
+                        <div class="custom-control custom-radio custom-control-inline">
+                            <input type="radio" id="radio2" class="custom-control-input" name="sentiment" value="neg">
+                            <label class="custom-control-label" for="radio2">😡</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="submit">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+     <script type="text/javascript">
+      var chartDom = document.getElementById('main');
+      var myChart = echarts.init(chartDom);
+      var option;
+
+      option = {
+        title: {
+          text: '公众情感倾向（总体）',
+          //subtext: 'Fake Data',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'item'
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
+        series: [
+          {
+            name: '评论数量：',
+            type: 'pie',
+            radius: '50%',
+            data: [
+              { value: {{news.positive}}, name: '正面' },
+              { value: {{news.negative}}, name: '负面' },
+            ],
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }
+        ]
+      };
+
+      option && myChart.setOption(option);
+    </script>
+
+    <script type="text/javascript">
+      var chartDom = document.getElementById('main2');
+      var myChart = echarts.init(chartDom);
+      var option;
+
+      option = {
+        title: {
+          text: '公众情感倾向（详细）',
+          //subtext: 'Fake Data',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'item'
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left'
+        },
+        series: [
+          {
+            name: '评论数量：',
+            type: 'pie',
+            radius: '50%',
+            data: [
+             { value:  {{news.happy}}, name: '喜悦' },
+              { value: {{news.hate}}, name: '厌恶' },
+              { value: {{news.angry}}, name: '愤怒' },
+              { value: {{news.sad}}, name: '低落' },
+
+            ],
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }
+        ]
+      };
+
+      option && myChart.setOption(option);
+    </script>
+
+    <script type="text/javascript">
+    var chartDom = document.getElementById('main3');
+    var myChart = echarts.init(chartDom);
+    var option;
+
+    option = {
+      title: {
+          text: '评论者性别比例',
+          //subtext: 'Fake Data',
+          left: 'center'
+        },
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        top: '10%',
+        left: 'center'
+      },
+      series: [
+        {
+          name: 'Access From',
+          type: 'pie',
+          radius: ['30%', '50%'],
+          avoidLabelOverlap: false,
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '20',
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: {{news.male_num}}, name: '男性评论者' },
+            { value: {{news.female_num}}, name: '女性评论者' },
+          ]
+        }
+      ]
+    };
+    option && myChart.setOption(option);
+    </script>
+
+    <script type="text/javascript">
+        var app = {};
+
+        var chartDom = document.getElementById('main4');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        const posList = [
+          'left',
+          'right',
+          'top',
+          'bottom',
+          'inside',
+          'insideTop',
+          'insideLeft',
+          'insideRight',
+          'insideBottom',
+          'insideTopLeft',
+          'insideTopRight',
+          'insideBottomLeft',
+          'insideBottomRight'
+        ];
+        app.configParameters = {
+          rotate: {
+            min: -90,
+            max: 90
+          },
+          align: {
+            options: {
+              left: 'left',
+              center: 'center',
+              right: 'right'
+            }
+          },
+          verticalAlign: {
+            options: {
+              top: 'top',
+              middle: 'middle',
+              bottom: 'bottom'
+            }
+          },
+          position: {
+            options: posList.reduce(function (map, pos) {
+              map[pos] = pos;
+              return map;
+            }, {})
+          },
+          distance: {
+            min: 0,
+            max: 100
+          }
+        };
+        app.config = {
+          rotate: 90,
+          align: 'left',
+          verticalAlign: 'middle',
+          position: 'insideBottom',
+          distance: 15,
+          onChange: function () {
+            const labelOption = {
+              rotate: app.config.rotate,
+              align: app.config.align,
+              verticalAlign: app.config.verticalAlign,
+              position: app.config.position,
+              distance: app.config.distance
+            };
+            myChart.setOption({
+              series: [
+                {
+                  label: labelOption
+                },
+                {
+                  label: labelOption
+                },
+                {
+                  label: labelOption
+                },
+                {
+                  label: labelOption
+                }
+              ]
+            });
+          }
+        };
+        const labelOption = {
+          show: true,
+          position: app.config.position,
+          distance: app.config.distance,
+          align: app.config.align,
+          verticalAlign: app.config.verticalAlign,
+          rotate: app.config.rotate,
+          formatter: '{c}  {name|{a}}',
+          fontSize: 16,
+          rich: {
+            name: {}
+          }
+        };
+        option = {
+        title: {
+          text: '性别与情感倾向相结合',
+          //subtext: 'Fake Data',
+          left: 'center'
+        },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+              type: 'shadow'
+            }
+          },
+          legend: {
+            data: ["好", 'Steppe', 'Desert', 'Wetland']
+          },
+          toolbox: {
+            show: true,
+            orient: 'vertical',
+            left: 'right',
+            top: 'center',
+            feature: {
+              mark: { show: true },
+              dataView: { show: true, readOnly: false },
+              magicType: { show: true, type: ['line', 'bar', 'stack'] },
+              restore: { show: true },
+              saveAsImage: { show: true }
+            }
+          },
+          xAxis: [
+            {
+              type: 'category',
+              axisTick: { show: false },
+              data: ['男', '女']
+            }
+          ],
+          yAxis: [
+            {
+              type: 'value'
+            }
+          ],
+          series: [
+            {
+              name: '喜悦',
+              type: 'bar',
+              barGap: 0,
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              data: [{{news.male_happy_num}}, {{news.female_happy_num}}]
+            },
+            {
+              name: '愤怒',
+              type: 'bar',
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              data: [{{news.male_angry_num}}, {{news.female_angry_num}}]
+            },
+            {
+              name: '厌恶',
+              type: 'bar',
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              data: [{{news.male_hate_num}}, {{news.female_hate_num}}]
+            },
+            {
+              name: '低落',
+              type: 'bar',
+              label: labelOption,
+              emphasis: {
+                focus: 'series'
+              },
+              data: [{{news.male_sad_num}}, {{news.female_sad_num}}]
+            }
+          ]
+        };
+
+        option && myChart.setOption(option);
+
+    </script>
+
+    <script type="text/javascript">
+        var chartDom = document.getElementById('main5');
+        var myChart = echarts.init(chartDom);
+        var option;
+        option = {
+         title: {
+                      text: '各地域评论数',
+                      left: 'center'
+                 },
+         grid: {
+            left: '13%',
+            right: '14%',
+            bottom: '13%',
+            containLabel: true
+          },
+          xAxis: {
+            type: 'category',
+            data: ['{{news.area[0]}}', '{{news.area[2]}}', '{{news.area[4]}}', '{{news.area[6]}}', '{{news.area[8]}}']
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [
+            {
+              data: [{{news.area[1]}}, {{news.area[3]}}, {{news.area[5]}}, {{news.area[7]}}, {{news.area[9]}}],
+              type: 'bar'
+            }
+          ]
+        };
+
+        option && myChart.setOption(option);
+    </script>
+
+    <script type="text/javascript">
+        var chartDom = document.getElementById('main6');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+          title: {
+                      text: '热度与情感倾向相结合',
+                      subtext: '预警值由”新闻热度“与”公众负面情绪占比“综合得出；\n预警值越大，舆情疏导必要性越高。',
+                      left: 'center'
+                 },
+          tooltip: {
+            formatter: '{a} <br/>{b} : {c}%'
+          },
+          series: [
+            {
+              radius: "70%",//圆弧半径，可以使用百分比
+              center: ["50%","60%"],//圆形相对容器的坐标 位置
+              name: 'Pressure',
+              type: 'gauge',
+              progress: {
+                show: true
+              },
+              detail: {
+                valueAnimation: true,
+                formatter: '{value}'
+              },
+              data: [
+                {
+                  value: {{news.alert}},
+                  name: '预警值'
+                }
+              ]
+            }
+          ]
+
+        };
+
+        option && myChart.setOption(option);
+    </script>
+
+
+</body>
+
+</html>
