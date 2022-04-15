@@ -3,7 +3,7 @@ from keras.preprocessing import sequence
 import pickle
 import numpy as np
 import jieba
-import xlrd
+import random
 from pyasn1.type.univ import Null
 
 
@@ -28,30 +28,98 @@ class PredictData:
         self.sex_female_hate = 0  # 男性评论者中，负面情绪的数量
         self.sex_female_sad = 0  # 男性评论者中，负面情绪的数量
         self.province_num = [0 for i in range(35)]
+        self.emog_happy = ['😁', '😃', '😄', '😉', '🤗', '😘', '😋', '😎', '😆', '😊']
+        self.emog_angry = ['😖', '😤', '😕', '😓', '😡', '😈', '💩', '😠', '😩', '😤']
+        self.emog_hate = ['😖', '😤', '😕', '😓', '🙁', '😖', '💩', '😩', '😧', '😴']
+        self.emog_sad = ['😢', '😭', '😩', '😓', '😞', '😱', '😨', '😩', '😷', '🤧']
         self.model = load_model('./model/emotionModel01.h5')  # 加载模型
         with open('./word_dict.pickle', 'rb') as handle:  # 加载分词字典
             self.word2index = pickle.load(handle)
 
-    def predict(self, src, cur):
+    def predictPartOfNews(self, news):
+        AllCommentText = news.comment
+        i = 0
+        XX = np.empty(len(AllCommentText), dtype=list)
+        for sentence in AllCommentText:
+            if len(sentence) == 0:
+                continue
+            sentence  # 待预测的评论
+            words = jieba.cut(sentence)
+            seq = []
+            for word in words:
+                if word in self.word2index:
+                    seq.append(self.word2index[word])
+                else:
+                    seq.append(self.word2index['UNK'])
+            XX[i] = seq
+            i += 1
+        MAX_SENTENCE_LENGTH = 110  # 句子最大长度
+        XX = sequence.pad_sequences(XX, maxlen=MAX_SENTENCE_LENGTH)
+        label2word = {0: '喜悦', 1: '愤怒', 2: '厌恶', 3: '低落'}
+        YY = self.model.predict(XX)
+        j = 0
+        for x in YY:
+            x = x.tolist()
+            label = x.index(max(x[0], x[1], x[2], x[3]))
+            news.comment_emotion[j] = label2word[label]
+
+            temp = random.random()  # 生成一个0-1之间的随机数
+            temp2 = random.randint(0,9)
+
+            if label == 0:
+                if temp < 0.3:
+                    news.comment[j] = news.comment[j] + self.emog_happy[temp2]
+                    if temp < 0.1:
+                        news.comment[j] = news.comment[j] + self.emog_happy[temp2]
+            if label == 1:
+                if temp < 0.2:
+                    news.comment[j] = news.comment[j] + self.emog_angry[temp2]
+                    if temp < 0.05:
+                        news.comment[j] = news.comment[j] + self.emog_angry[temp2]
+            if label == 2:
+                if temp < 0.3:
+                    news.comment[j] = news.comment[j] + self.emog_hate[temp2]
+            if label == 3:
+                if temp < 0.5:
+                    news.comment[j] = news.comment[j] + self.emog_sad[temp2]
+                    if temp < 0.1:
+                        news.comment[j] = news.comment[j] + self.emog_sad[temp2]
+            j += 1
+
+    def predict(self, src, cur, news):
 
         # 评论总数
         comment_sum = cur.execute("select comment_text,create_time,like_count,commentor_sex,commentor_addr from " + src)
         # 所有评论信息
-        comments = cur.fechAll()
-        AllCommentText = comments[0]  # 获取评论所有内容
-        AllCreateTime = comments[1]  # 获取所有的评论时间
-        AlllikeCount = comments[2]  # 获取所有的点赞量
-        Allsex = comments[3]  # 获取所有的性别
-        Allprovince = comments[4].split(" ")  # 获取所有的评论者所在地
+        comments = cur.fetchall()
+        comments = list(comments)
+        for i in range(len(comments)):
+            comments[i] = list(comments[i])
 
-        for j in range(1, len(AllCommentText)):
-            self.changeProvince(Allprovince[0])
-            INPUT_SENTENCES = [AllCommentText]  # 待预测的评论
-            XX = np.empty(len(INPUT_SENTENCES), dtype=list)
+        all_comment_text = []
+        all_create_time = []
+        all_like_count = []
+        all_sex = []
+        all_province = []
+        for elem in comments:
+            all_comment_text.append(elem[0])  # 获取评论所有内容
+            all_create_time.append(elem[1])  # 获取所有的评论时间
+            all_like_count.append(elem[2])  # 获取所有的点赞量
+            all_sex.append(elem[3])  # 获取所有的性别
+            all_province.append(elem[4])  # 获取所有的评论者所在地
+
+        for j in range(1, len(all_comment_text)):
+            if len(all_comment_text[j]) == 0:
+                continue
+            self.changeProvince(all_province[0])
+            # INPUT_SENTENCES = [all_comment_text]  # 待预测的评论
+            XX = np.empty(len(all_comment_text[j]), dtype=list)
             i = 0
-            for sentence in INPUT_SENTENCES:
-                words = jieba.cut(sentence)
+            for sentence in all_comment_text[j]:
+                words = jieba.lcut(sentence)
                 seq = []
+                if len(words) == 0:
+                    continue
                 for word in words:
                     if word in self.word2index:
                         seq.append(self.word2index[word])
@@ -59,12 +127,13 @@ class PredictData:
                         seq.append(self.word2index['UNK'])
                 XX[i] = seq
                 i += 1
-
             MAX_SENTENCE_LENGTH = 110  # 句子最大长度
+
             XX = sequence.pad_sequences(XX, maxlen=MAX_SENTENCE_LENGTH)
+            # print(len(XX))
             label2word = {0: '喜悦', 1: '愤怒', 2: '厌恶', 3: '低落'}
-            for x in self.model.predict(XX):
-                # print(x)  #输出预测的概率
+            X = self.model.predict(XX)
+            for x in X:
                 x = x.tolist()
                 label = x.index(max(x[0], x[1], x[2], x[3]))
                 # 统计情绪数量
@@ -77,7 +146,7 @@ class PredictData:
                 if label == 3:
                     self.sad = self.sad + 1
                 # 统计性别和情绪的信息
-                if Allsex[j] == "女":
+                if all_sex[j] == "女":
                     self.sex_female = self.sex_female + 1
                     # 女性评论者中，正面情绪的数量
                     if label == 0:
@@ -100,19 +169,33 @@ class PredictData:
                     else:
                         self.sex_male_sad = self.sex_male_sad + 1
 
-                # print(label)  #输出0，喜悦的标签编号
+                print(label)  # 输出0，喜悦的标签编号
                 # print('{}'.format(label2word[label]))   #输出汉字“喜悦"
                 result = str('{}'.format(label2word[label])) + ";" + str(label) + ";" + str(x) + ";" + str(
-                    AllCommentText[j]) + ";" + str(AllCreateTime[j]) + ";" + str(AlllikeCount[j]) + "\n"
+                    all_comment_text[j]) + ";" + str(all_create_time[j]) + ";" + str(all_like_count[j]) + "\n"
                 # print(result)
-                f.write(result)  # 自带文件关闭功能，不需要再写f.close()
-        fiveMostProvince = self.chooseFiveMostProvince()
+            # f.write(result)  # 自带文件关闭功能，不需要再写f.close()
+        fiveMostProvince = self.chooseFiveMostProvince(news)
         print("#################五个评论最多的身份:" + str(fiveMostProvince))
         print(str(self.happy) + "," + str(self.angry) + "," + str(self.hate) + "," + str(self.sad) + "," + str(
             self.sex_male) + "," + str(self.sex_male_happy) + "," + str(self.sex_male_angry) + "," + str(
             self.sex_male_hate) + "," + str(self.sex_male_sad) + "," + str(
             self.sex_female) + "," + str(self.sex_female_happy) + "," + str(self.sex_female_angry) + "," + str(
             self.sex_female_hate) + "," + str(self.sex_female_sad) + "," + fiveMostProvince)
+        news.happy = self.happy
+        news.angry = self.angry
+        news.hate = self.hate
+        news.sad = self.sad
+        news.male_num = self.sex_male
+        news.male_happy_num = self.sex_male_happy
+        news.male_angry_num = self.sex_male_angry
+        news.male_hate_num = self.sex_male_hate
+        news.male_sad_num = self.sex_male_sad
+        news.female_num = self.sex_female
+        news.female_happy_num = self.sex_female_happy
+        news.female_angry_num = self.sex_female_angry
+        news.female_hate_num = self.sex_female_hate
+        news.female_sad_num = self.sex_female_sad
         self.justify()
 
     def justify(self):
@@ -137,7 +220,7 @@ class PredictData:
             self.province_num[i] = 0
 
     # 挑选五个评论者最多的省份
-    def chooseFiveMostProvince(self):
+    def chooseFiveMostProvince(self, news):
         maxFive = ""
         max_value = 0  # 此论最大值
         max_value_index = 0  # 此轮最大值所在的列表下标
@@ -150,7 +233,9 @@ class PredictData:
             # 找到max_value_index对应的省份
             max_value_pro = self.findprovince(max_value_index)
             # 将此轮最大值添加到maxFive中
-            maxFive = str(maxFive) + str(max_value_pro) + "|" + str(max_value) + ","
+            news.area.append(str(max_value_pro));
+            news.area.append(str(max_value));
+            # maxFive = str(maxFive) + str(max_value_pro) + "|" + str(max_value) + ","
             # 将此轮最大值置为0
             self.province_num[max_value_index] = 0
             max_value = 0  # 下一轮最大值
@@ -307,7 +392,7 @@ class PredictData:
                 self.province_num[34] = self.province_num[34] + 1
 
     def predictold(self):
-        INPUT_SENTENCES = ['今天好开心呀！']
+        INPUT_SENTENCES = ['今天好开心呀！', '很生气', '我很开心']
         XX = np.empty(len(INPUT_SENTENCES), dtype=list)
         i = 0
         for sentence in INPUT_SENTENCES:
@@ -324,9 +409,11 @@ class PredictData:
         MAX_SENTENCE_LENGTH = 110  # 句子最大长度
         XX = sequence.pad_sequences(XX, maxlen=MAX_SENTENCE_LENGTH)
         label2word = {0: '喜悦', 1: '愤怒', 2: '厌恶', 3: '低落'}
+        print(XX)
         for x in self.model.predict(XX):
             # print(x)
             x = x.tolist()
+            print(x)
             label = x.index(max(x[0], x[1], x[2], x[3]))
             print(label)
             print('{}'.format(label2word[label]))

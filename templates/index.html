@@ -54,10 +54,10 @@
                     <a class="a_style", href="/refresh/2", id="btn3">{{TitleAll[2]}}</a>
                     <a class="a_style", href="/refresh/3", id="btn4">{{TitleAll[3]}}</a>
                     <a class="a_style", href="/refresh/4", id="btn5">{{TitleAll[4]}}</a>
-                    <a class="a_style", href="/refresh/5", id="btn6">{{TitleAll[5]}}</a>
+                 <!--    <a class="a_style", href="/refresh/5", id="btn6">{{TitleAll[5]}}</a>
                     <a class="a_style", href="/refresh/6", id="btn7">{{TitleAll[6]}}</a>
                     <a class="a_style", href="/refresh/7", id="btn8">{{TitleAll[7]}}</a>
-                    <a class="a_style", href="/refresh/8", id="btn9">{{TitleAll[8]}}</a>
+                    <a class="a_style", href="/refresh/8", id="btn9">{{TitleAll[8]}}</a> -->
                     <!-- <a class="a_style", href="/refresh/3", id="btn3">{{TitleAll[2]}}</a> -->
                 </div>
             </div>
@@ -73,13 +73,13 @@
                                             </h6>
                                             <p class="card-subtitle mb-2 text-muted", id="NewsTime">{{news.time}}</p>
                                             <!-- 添加热度标签 -->
-                                            {% if news.hotIndex=="1" %}
+                                            {% if news.hotIndex==1 %}
                                                 <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★</p>
-                                            {% elif news.hotIndex=="2" %}
+                                            {% elif news.hotIndex==2 %}
                                                 <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★</p>
-                                            {% elif news.hotIndex=="3" %}
+                                            {% elif news.hotIndex==3 %}
                                                 <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★</p>
-                                            {% elif news.hotIndex=="4" %}
+                                            {% elif news.hotIndex==4 %}
                                                 <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★★</p>
                                             {% else %}
                                                 <p class="card-subtitle mb-2 text-muted", style="display: inline-block" >热度：★★★★★</p>
