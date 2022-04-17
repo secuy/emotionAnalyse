@@ -2,6 +2,8 @@ from flask import Flask, render_template, request
 from pyasn1.type.univ import Null
 import pymysql
 import random
+from keras.models import load_model
+import pickle
 
 from analysisData import PredictData
 from news import news
@@ -10,11 +12,16 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = '1456719640@qq.com'
 
-
-
+newsList = []
+TitleAll = []
 
 @app.route("/")
 def root():
+    global newsList
+    global TitleAll
+    newsList = []
+    TitleAll = []
+    chooseNews(newsList, TitleAll)
     return render_template('index.html', TitleAll=TitleAll, news=newsList[0], flag=1)
 
 
@@ -39,24 +46,25 @@ def search():
             break
     # 搜索失败
     if p == 0:
-        return render_template('Index.html', TitleAll=TitleAll, news=newsList[0], flag=-1)
+        return render_template('index.html', TitleAll=TitleAll, news=newsList[0], flag=-1)
     # 搜索成功
     else:
-        return render_template('Index.html', TitleAll=TitleAll, news=news_choose1, flag=1)
+        return render_template('index.html', TitleAll=TitleAll, news=news_choose1, flag=1)
 
 
 # 连接数据库
 def connectDB():
+    # 这里的user和passwd在上传服务器的时候要更改
     conn = pymysql.connect(host='localhost', user="root", password="", database="weibo", charset='utf8')
     cursor = conn.cursor()
     return cursor
 
 
-if __name__ == '__main__':
-    Predic = PredictData()
-    newsList = []
+def chooseNews(newsList, TitleAll):
+    Predic = PredictData(model, word_dic)
+
     temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    cur = connectDB()
+
     newsSum = cur.execute("SELECT * FROM newsall")
     datanews = cur.fetchall()
     nums = random.sample(range(1, newsSum + 1), 5)
@@ -80,8 +88,14 @@ if __name__ == '__main__':
             temp[i] = 1
 
     # 在titleAll中加入所有的新闻标题
-    TitleAll = []
+
     for i in range(len(newsList)):
         TitleAll.append(newsList[i].title)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+if __name__ == '__main__':
+    cur = connectDB()
+    model = load_model('./model/emotionModel01.h5')  # 加载模型
+    with open('./word_dict.pickle', 'rb') as handle:  # 加载分词字典
+        word_dic = pickle.load(handle)
+    app.run(debug=True, host='0.0.0.0', port=8080)
     # 0.0.0.0用于外网访问

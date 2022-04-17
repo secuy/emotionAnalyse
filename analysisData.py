@@ -1,6 +1,5 @@
-from keras.models import load_model
+
 from keras.preprocessing import sequence
-import pickle
 import numpy as np
 import jieba
 import random
@@ -8,7 +7,7 @@ from pyasn1.type.univ import Null
 
 
 class PredictData:
-    def __init__(self):
+    def __init__(self, predic_model, word_dic):
         print("加载模型")
         self.happy = 0
         self.angry = 0
@@ -32,9 +31,8 @@ class PredictData:
         self.emog_angry = ['😖', '😤', '😕', '😓', '😡', '😈', '💩', '😠', '😩', '😤']
         self.emog_hate = ['😖', '😤', '😕', '😓', '🙁', '😖', '💩', '😩', '😧', '😴']
         self.emog_sad = ['😢', '😭', '😩', '😓', '😞', '😱', '😨', '😩', '😷', '🤧']
-        self.model = load_model('./model/emotionModel01.h5')  # 加载模型
-        with open('./word_dict.pickle', 'rb') as handle:  # 加载分词字典
-            self.word2index = pickle.load(handle)
+        self.model = predic_model
+        self.word2index = word_dic
 
     def predictPartOfNews(self, news):
         AllCommentText = news.comment
